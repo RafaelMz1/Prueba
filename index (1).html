@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Teachable Machine LED Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+    <style>
+      body { text-align: center; font-family: sans-serif; }
+      video { width: 300px; height: auto; margin-top: 10px; }
+      h1 { color: #2c3e50; }
+    </style>
+  </head>
+  <body>
+    <h1>Reconocimiento Facial IA</h1>
+    <div id="webcam-container"></div>
+    <div id="label">Cargando modelo...</div>
+
+    <script type="text/javascript">
+      const URL = "https://teachablemachine.withgoogle.com/models/HXAt-g69c/";
+
+      let model, webcam, labelContainer, maxPredictions;
+
+      async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const flip = true;
+        webcam = new tmImage.Webcam(300, 300, flip);
+        await webcam.setup();
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        document.getElementById("webcam-container").appendChild(webcam.canvas);
+        labelContainer = document.getElementById("label");
+      }
+
+      async function loop() {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+      }
+
+      async function predict() {
+        const prediction = await model.predict(webcam.canvas);
+        prediction.sort((a, b) => b.probability - a.probability);
+        const clase = prediction[0].className;
+        const conf = (prediction[0].probability * 100).toFixed(2);
+        labelContainer.innerHTML = `${clase} (${conf}%)`;
+
+        if (window.AppInventor) {
+          window.AppInventor.setWebViewString(clase);
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>
